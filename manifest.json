@@ -1,0 +1,11 @@
+{
+  "name":"每日單字｜英文背單字",
+  "short_name":"每日單字",
+  "description":"免費英文單字卡、複習測驗與離線學習",
+  "start_url":"./index.html",
+  "scope":"./",
+  "display":"standalone",
+  "background_color":"#f5f5fb",
+  "theme_color":"#5145cd",
+  "icons":[{"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]
+}

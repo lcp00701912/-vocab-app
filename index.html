@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#5145cd"><meta name="description" content="免費離線英文背單字工具">
+<link rel="manifest" href="manifest.json"><link rel="icon" href="icon.svg">
+<title>每日單字｜背單字</title>
+<style>
+:root{font-family:system-ui,-apple-system,"Noto Sans TC",sans-serif;color:#202036;background:#f5f5fb;--accent:#5145cd;--line:#e3e3ee;--muted:#707087}
+*{box-sizing:border-box}body{margin:0}header{background:linear-gradient(125deg,#5145cd,#776be7);color:white;padding:22px max(18px,calc((100% - 900px)/2))}header h1{margin:0;font-size:25px}header p{margin:5px 0 0;opacity:.85;font-size:14px}
+main{max-width:900px;margin:auto;padding:18px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}.stat,.panel,.wordcard{background:white;border:1px solid var(--line);border-radius:16px;padding:15px;box-shadow:0 2px 9px #27205b08}.stat small{color:var(--muted)}.stat strong{display:block;font-size:25px;margin-top:3px}.panel{margin-bottom:14px}.toolbar{display:flex;gap:8px;flex-wrap:wrap}.toolbar input{flex:1;min-width:160px}input,select,textarea{font:inherit;border:1px solid #d9d9e8;border-radius:10px;padding:10px;background:white;color:#202036;width:100%}button,.filelabel{font:inherit;font-weight:650;border:1px solid #d8d8e8;border-radius:10px;padding:9px 12px;background:white;color:#292744;cursor:pointer}button.primary{background:var(--accent);color:white;border-color:var(--accent)}button:disabled{opacity:.5;cursor:default}.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}.formgrid .wide{grid-column:1/-1}.row{display:flex;align-items:center;justify-content:space-between;gap:10px}.switch{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted)}.switch input{width:18px;height:18px;accent-color:var(--accent)}#list{display:grid;gap:10px}.wordcard .word{font-size:24px;font-weight:800;overflow-wrap:anywhere}.meaning{margin:4px 0 12px;color:#585775}.example{background:#f5f4ff;border-radius:10px;padding:11px;margin-top:10px;line-height:1.65}.translation{color:#666483;font-size:14px}.cardactions{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}.pill{font-size:11px;background:#eeedff;color:#5145cd;border-radius:99px;padding:4px 8px}.empty{text-align:center;color:var(--muted);padding:30px 10px}.small{font-size:12px;color:var(--muted);line-height:1.6}.hidden{display:none!important}.quizbox{padding:16px;background:#f5f4ff;border-radius:12px}.quizword{font-size:28px;font-weight:800;margin:8px 0 16px}.options{display:grid;grid-template-columns:1fr 1fr;gap:8px}.options button{text-align:left}.good{color:#16834a}.bad{color:#c03946}footer{text-align:center;color:var(--muted);font-size:12px;padding:15px}@media(max-width:560px){main{padding:12px}.stats{gap:7px}.stat{padding:11px}.stat strong{font-size:22px}.formgrid{grid-template-columns:1fr}.formgrid .wide{grid-column:auto}.options{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header><h1>📚 每日單字</h1><p>累積單字・練習記憶・離線也能使用</p></header>
+<main>
+<section class="stats">
+<div class="stat"><small>單字總數</small><strong id="total">0</strong></div>
+<div class="stat"><small>今日複習</small><strong id="done">0</strong></div>
+<div class="stat"><small>還不熟悉</small><strong id="weak">0</strong></div>
+</section>
+<section class="panel">
+<div class="row"><h2 style="font-size:18px;margin:0">我的單字本</h2><label class="switch"><input id="maskAll" type="checkbox"> 隱藏中文</label></div>
+<div class="toolbar" style="margin-top:12px"><input id="search" placeholder="搜尋英文或中文"><button id="showAdd" class="primary">＋ 新增單字</button></div>
+<form id="addForm" class="hidden">
+<div class="formgrid">
+<input id="english" placeholder="英文單字／片語" required>
+<input id="chinese" placeholder="中文翻譯" required>
+<input id="exampleInput" class="wide" placeholder="英文例句（選填）">
+<input id="translationInput" class="wide" placeholder="例句中文（選填）">
+<div class="wide row"><button type="submit" class="primary">儲存單字</button><button type="button" id="cancelAdd">取消</button></div>
+</div><p class="small">例句可以自行填寫；「快速例句」會套用通用模板，不代表 AI 生成。</p>
+</form>
+</section>
+<section id="list"></section>
+<div id="empty" class="empty hidden">找不到單字。試試新增一個吧！</div>
+<section class="panel">
+<h2 style="font-size:18px;margin:0 0 10px">🧠 複習測驗</h2>
+<p class="small">隨機抽取單字，選出正確中文。測驗只使用你單字本內的內容。</p>
+<div id="quiz" class="quizbox"><button id="startQuiz" class="primary">開始測驗</button></div>
+</section>
+<section class="panel">
+<h2 style="font-size:18px;margin:0 0 10px">備份與管理</h2>
+<div class="toolbar">
+<button id="exportBtn">匯出備份 JSON</button>
+<button id="csvBtn">匯出 CSV</button>
+<label class="filelabel">匯入 JSON／CSV<input type="file" id="importFile" accept=".json,.csv,text/csv,application/json" hidden></label>
+<button id="clearDone">重設今日複習</button>
+</div>
+<p class="small">資料存在目前瀏覽器的本機儲存空間。請定期匯出備份；清除網站資料、換裝置或換瀏覽器不會自動同步。</p>
+<div id="notice" class="small" role="status"></div>
+</section>
+<footer>免費單機版 · 劍橋辭典發音連結 · 本機資料保存</footer>
+</main>
+<script>
+(()=> {
+const $=id=>document.getElementById(id), KEY='vocab-pwa-v1', DAY=new Date().toLocaleDateString('sv-SE');
+const starter=[
+['achieve','達成；實現','I want to achieve my goal.','我想達成我的目標。'],
+['curious','好奇的','She is curious about the world.','她對這個世界充滿好奇。'],
+['improve','改善；進步','I practice every day to improve my English.','我每天練習來提升英文。'],
+['confident','有自信的','He feels confident before the test.','考試前他感到很有自信。'],
+['opportunity','機會','This is a good opportunity to learn.','這是學習的好機會。'],
+['patient','有耐心的','Please be patient with yourself.','請對自己多一點耐心。'],
+['decide','決定','I need time to decide.','我需要時間做決定。'],
+['valuable','寶貴的；有價值的','Time is more valuable than money.','時間比金錢更寶貴。']
+].map((a,i)=>({id:crypto.randomUUID?.()||String(i),en:a[0],zh:a[1],example:a[2],trans:a[3],level:'new',reviewDay:''}));
+let data;try{data=JSON.parse(localStorage.getItem(KEY))}catch{}
+if(!Array.isArray(data))data=starter;
+function save(){try{localStorage.setItem(KEY,JSON.stringify(data))}catch{$('notice').textContent='儲存空間不足，請先匯出備份。'}}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function stats(){$('total').textContent=data.length;$('done').textContent=data.filter(x=>x.reviewDay===DAY).length;$('weak').textContent=data.filter(x=>x.level!=='known').length}
+function render(){
+ stats();let q=$('search').value.trim().toLowerCase(),shown=data.filter(w=>(w.en+' '+w.zh).toLowerCase().includes(q));
+ $('list').innerHTML=shown.map(w=>`<article class="wordcard" data-id="${esc(w.id)}">
+ <div class="row"><div><div class="row" style="justify-content:flex-start;flex-wrap:wrap"><span class="word">${esc(w.en)}</span><span class="pill">${w.level==='known'?'已熟悉':w.level==='learning'?'學習中':'未標記'}</span></div>
+ <div class="meaning" data-meaning>${$('maskAll').checked?'<button data-act="reveal">點擊顯示中文</button>':esc(w.zh)}</div></div>
+ <button data-act="pronounce" aria-label="查詢辭典發音">🔊 發音</button></div>
+ ${w.example?`<div class="example"><div>${esc(w.example)}</div>${w.trans?`<div class="translation">${esc(w.trans)}</div>`:''}</div>`:''}
+ <div class="cardactions"><button data-act="meaning">顯示／隱藏中文</button><button data-act="example">快速例句</button><button data-act="known">${w.level==='known'?'↩ 改為學習中':'✓ 已熟悉'}</button><button data-act="edit">編輯</button><button data-act="delete">刪除</button></div>
+ </article>`).join('');
+ $('empty').classList.toggle('hidden',shown.length!==0);
+}
+$('showAdd').onclick=()=>{$('addForm').classList.toggle('hidden');$('english').focus()};
+$('cancelAdd').onclick=()=>$('addForm').classList.add('hidden');
+$('search').oninput=render;$('maskAll').onchange=render;
+$('addForm').onsubmit=e=>{e.preventDefault();let en=$('english').value.trim(),zh=$('chinese').value.trim();if(!en||!zh)return;
+ if(data.some(w=>w.en.toLowerCase()===en.toLowerCase())){alert('此單字已存在。');return}
+ data.unshift({id:crypto.randomUUID?.()||String(Date.now()),en,zh,example:$('exampleInput').value.trim(),trans:$('translationInput').value.trim(),level:'new',reviewDay:''});save();e.target.reset();e.target.classList.add('hidden');render()};
+$('list').onclick=e=>{let b=e.target.closest('button[data-act]');if(!b)return;let card=b.closest('[data-id]'),w=data.find(x=>x.id===card.dataset.id);if(!w)return;
+ switch(b.dataset.act){
+ case 'pronounce':window.open('https://dictionary.cambridge.org/dictionary/english/'+encodeURIComponent(w.en.trim().replace(/\s+/g,'-')),'_blank','noopener');break;
+ case 'reveal':card.querySelector('[data-meaning]').textContent=w.zh;break;
+ case 'meaning':{let el=card.querySelector('[data-meaning]');if(el.textContent===w.zh)el.innerHTML='<button data-act="reveal">點擊顯示中文</button>';else el.textContent=w.zh;break}
+ case 'example':if(!w.example){w.example=`I want to learn how to use "${w.en}" correctly.`;w.trans=`我想學習如何正確使用「${w.en}」。`;save();render()}else alert('已有例句。可按「編輯」修改。');break;
+ case 'known':w.level=w.level==='known'?'learning':'known';w.reviewDay=DAY;save();render();break;
+ case 'edit':{let en=prompt('英文',w.en);if(en===null)return;let zh=prompt('中文',w.zh);if(zh===null)return;let ex=prompt('英文例句',w.example||'');if(ex===null)return;let tr=prompt('例句中文',w.trans||'');if(tr===null)return;w.en=en.trim()||w.en;w.zh=zh.trim()||w.zh;w.example=ex.trim();w.trans=tr.trim();save();render();break}
+ case 'delete':if(confirm(`確定刪除 ${w.en}？`)){data=data.filter(x=>x.id!==w.id);save();render()}break;
+ }
+};
+function download(name,content,type){let blob=new Blob([content],{type}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
+$('exportBtn').onclick=()=>download('my-vocabulary.json',JSON.stringify(data,null,2),'application/json');
+function csvCell(s){return '"'+String(s??'').replace(/"/g,'""')+'"'}
+$('csvBtn').onclick=()=>download('my-vocabulary.csv','\ufeff'+[['English','Chinese','Example','Translation','Level'],...data.map(w=>[w.en,w.zh,w.example,w.trans,w.level])].map(r=>r.map(csvCell).join(',')).join('\r\n'),'text/csv;charset=utf-8');
+function parseCSV(s){let rows=[],row=[],v='',quoted=false;for(let i=0;i<s.length;i++){let c=s[i];if(quoted){if(c==='"'&&s[i+1]==='"'){v+='"';i++}else if(c==='"')quoted=false;else v+=c}else if(c==='"')quoted=true;else if(c===','){row.push(v);v=''}else if(c==='\n'){row.push(v.replace(/\r$/,''));rows.push(row);row=[];v=''}else v+=c}if(v||row.length){row.push(v.replace(/\r$/,''));rows.push(row)}return rows}
+$('importFile').onchange=async e=>{let f=e.target.files[0];if(!f)return;try{let txt=await f.text(),arr;if(f.name.toLowerCase().endsWith('.json'))arr=JSON.parse(txt);else{let rows=parseCSV(txt.replace(/^\ufeff/,'')),head=rows.shift().map(x=>x.toLowerCase());arr=rows.filter(r=>r.some(Boolean)).map(r=>({en:r[head.indexOf('english')]||r[0],zh:r[head.indexOf('chinese')]||r[1],example:r[head.indexOf('example')]||'',trans:r[head.indexOf('translation')]||'',level:r[head.indexOf('level')]||'new'}))}
+ if(!Array.isArray(arr))throw Error('格式應為單字陣列');let count=0;arr.forEach(w=>{let en=String(w.en||w.english||'').trim(),zh=String(w.zh||w.chinese||'').trim();if(en&&zh&&!data.some(x=>x.en.toLowerCase()===en.toLowerCase())){data.push({id:crypto.randomUUID?.()||String(Date.now()+count),en,zh,example:String(w.example||''),trans:String(w.trans||w.translation||''),level:w.level==='known'?'known':'new',reviewDay:''});count++}});save();render();$('notice').textContent=`匯入完成：新增 ${count} 個單字（同名項目略過）。`}catch(err){alert('匯入失敗：'+err.message)}e.target.value=''};
+$('clearDone').onclick=()=>{if(confirm('重設今日複習標記？')){data.forEach(w=>{if(w.reviewDay===DAY)w.reviewDay=''});save();render()}};
+let current=null,score=0,round=0;
+function start(){if(data.length<2){$('quiz').innerHTML='至少需要 2 個單字才能開始測驗。';return}score=0;round=0;next()}
+function next(){if(round>=10||round>=data.length){$('quiz').innerHTML=`<h3>本次完成！</h3><p>答對 ${score} / ${round} 題</p><button id="again" class="primary">再測一次</button>`;$('again').onclick=start;return}
+ current=data[Math.floor(Math.random()*data.length)];let others=data.filter(w=>w.id!==current.id).sort(()=>Math.random()-.5).slice(0,3),opts=[current,...others].sort(()=>Math.random()-.5);
+ $('quiz').innerHTML=`<div class="small">第 ${round+1} 題</div><div class="quizword">${esc(current.en)}</div><div class="options">${opts.map((w,i)=>`<button data-answer="${esc(w.id)}">${i+1}. ${esc(w.zh)}</button>`).join('')}</div><div id="feedback" class="small" style="margin-top:10px"></div>`;
+ $('quiz').querySelectorAll('[data-answer]').forEach(btn=>btn.onclick=()=>{if(btn.disabled)return;let right=btn.dataset.answer===current.id;round++;if(right)score++;else current.level='learning';current.reviewDay=DAY;save();$('quiz').querySelectorAll('button').forEach(b=>b.disabled=true);$('feedback').innerHTML=`<span class="${right?'good':'bad'}">${right?'答對了！':'正確答案：'+esc(current.zh)}</span><button id="next" class="primary" style="float:right">下一題</button>`;stats();$('next').onclick=next});
+}
+$('startQuiz').onclick=start;render();
+if('serviceWorker'in navigator && location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js').catch(()=>{});
+})();
+</script>
+</body></html>
